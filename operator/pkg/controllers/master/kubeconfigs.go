@@ -54,6 +54,7 @@ func (c *Controller) reconcileKubeConfigs(ctx context.Context, controlPlane *v1a
 		kubeConfigRequest(clusterName, ns, endpoint, kubeAdminAuthRequest(clusterName, caSecret)),
 		kubeConfigRequest(clusterName, ns, localhostEndpoint, kubeSchedulerAuthRequest(clusterName, caSecret)),
 		kubeConfigRequest(clusterName, ns, localhostEndpoint, kubeControllerManagerAuthRequest(clusterName, caSecret)),
+		kubeConfigRequest(clusterName, ns, localhostEndpoint, certificatesControllerAuthRequest(clusterName, caSecret)),
 	} {
 		if err := c.kubeConfigs.ReconcileConfigFor(ctx, controlPlane, request); err != nil {
 			return err
@@ -128,6 +129,19 @@ func kubeControllerManagerAuthRequest(clusterName string, caSecret *v1.Secret) *
 	}
 }
 
+func certificatesControllerAuthRequest(clusterName string, caSecret *v1.Secret) *authRequest {
+	caKey, caCert := secrets.Parse(caSecret)
+	return &authRequest{
+		name:   CertificatesControllerSecretNameFor(clusterName),
+		caCert: caCert,
+		caKey:  caKey,
+		config: &certutil.Config{
+			Usages:     []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+			CommonName: "eks:certificate-controller",
+		},
+	}
+}
+
 func (r *authRequest) Generate() (map[string]*clientcmdapi.AuthInfo, error) {
 	private, public, err := pkiutil.GenerateSignedCertAndKey(r.config, r.caCert, r.caKey)
 	if err != nil {
@@ -155,4 +169,8 @@ func KubeAdminSecretNameFor(clusterName string) string {
 
 func KubeControllerManagerSecretNameFor(clusterName string) string {
 	return fmt.Sprintf("%s-kube-controller-manager-config", clusterName)
+}
+
+func CertificatesControllerSecretNameFor(clusterName string) string {
+	return fmt.Sprintf("%s-certificates-controller-config", clusterName)
 }

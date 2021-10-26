@@ -59,6 +59,7 @@ func (c *Controller) Reconcile(ctx context.Context, controlPlane *v1alpha1.Contr
 		c.reconcileAuthenticatorConfig,
 		c.reconcileAuthenticatorDaemonSet,
 		c.iamProvider.Reconcile,
+		c.reconcileCertsControllerDaemonSet,
 	} {
 		if err := reconcile(ctx, controlPlane); err != nil {
 			return err

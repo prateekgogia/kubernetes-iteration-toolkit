@@ -45,3 +45,19 @@ Resources:
               - "autoscaling:DescribeAutoScalingGroups"
               - "iam:GetRole"
               - "iam:GetInstanceProfile"
+  CertificateControllerRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: KitCertificateControllerRole
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                !Sub "eks.${AWS::URLSuffix}"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonEKSClusterPolicy"

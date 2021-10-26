@@ -66,3 +66,7 @@ func AWSIamAuthenticator() string {
 func BusyBox() string {
 	return "public.ecr.aws/runecast/busybox:1.33.1"
 }
+
+func CertificatesController() string {
+	return "674320443449.dkr.ecr.us-west-2.amazonaws.com/eks-certificates-controller:latest"
+}

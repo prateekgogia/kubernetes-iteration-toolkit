@@ -17,6 +17,7 @@ package awsprovider
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/awslabs/kit/operator/pkg/utils/project"
 
@@ -94,6 +95,7 @@ func IAMClient(sess *session.Session) *IAM {
 
 type AccountMetadata interface {
 	ID() (string, error)
+	VPCID() (string, error)
 }
 
 type AccountInfo struct {
@@ -106,4 +108,16 @@ func (a *AccountInfo) ID() (string, error) {
 		return "", fmt.Errorf("getting instance metadata, %v", err)
 	}
 	return doc.AccountID, nil
+}
+
+func (a *AccountInfo) VPCID() (string, error) {
+	macs, err := ec2metadata.New(a.Session).GetMetadata("network/interfaces/macs")
+	if err != nil {
+		return "", fmt.Errorf("getting metadata mac address, %w", err)
+	}
+	vpcID, err := ec2metadata.New(a.Session).GetMetadata(fmt.Sprintf("network/interfaces/macs/%s/vpc-id", strings.Split(macs, "\n")[0]))
+	if err != nil {
+		return "", fmt.Errorf("getting metadata vpc ID, %w", err)
+	}
+	return vpcID, nil
 }

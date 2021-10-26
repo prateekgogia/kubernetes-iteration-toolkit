@@ -52,6 +52,9 @@ type fakeIAMProvider struct{}
 func (f *fakeIAMProvider) Reconcile(_ context.Context, _ *v1alpha1.ControlPlane) error { return nil }
 func (f *fakeIAMProvider) Finalize(_ context.Context, _ *v1alpha1.ControlPlane) error  { return nil }
 
+func (f *fakeAccountProvider) VPCID() (string, error) {
+	return "fakeVPCID", nil
+}
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "ControlPlane")
