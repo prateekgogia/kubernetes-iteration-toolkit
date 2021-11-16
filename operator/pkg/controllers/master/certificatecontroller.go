@@ -57,8 +57,9 @@ func (c *Controller) reconcileCertsControllerDaemonSet(ctx context.Context, cont
 						NodeSelector: APIServerLabels(controlPlane.ClusterName()),
 						Tolerations:  []v1.Toleration{{Operator: v1.TolerationOpExists}},
 						Containers: []v1.Container{{
-							Name:  "eks-certificates-controller",
-							Image: imageprovider.CertificatesController(),
+							Name:            "eks-certificates-controller",
+							Image:           imageprovider.CertificatesController(),
+							ImagePullPolicy: v1.PullAlways,
 							Env: []v1.EnvVar{{
 								Name:  "AWS_EXECUTION_ENV",
 								Value: "eks-certificates-controller",
@@ -86,6 +87,10 @@ func (c *Controller) reconcileCertsControllerDaemonSet(ctx context.Context, cont
 							}, {
 								Name:      "client-ca-file",
 								MountPath: "/etc/kubernetes/pki/ca",
+							}},
+							Ports: []v1.ContainerPort{{
+								Name:          "metrics",
+								ContainerPort: 10334,
 							}},
 						}},
 						Volumes: []v1.Volume{{
