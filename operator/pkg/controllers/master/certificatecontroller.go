@@ -39,7 +39,7 @@ func (c *Controller) reconcileCertsControllerDaemonSet(ctx context.Context, cont
 	return c.kubeClient.EnsurePatch(ctx, &appsv1.DaemonSet{},
 		&appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "eks-certificates-controller",
+				Name:      controlPlane.ClusterName() + "-certs-controller",
 				Namespace: controlPlane.Namespace,
 				Labels:    certControllerLabels(),
 			},
@@ -64,11 +64,8 @@ func (c *Controller) reconcileCertsControllerDaemonSet(ctx context.Context, cont
 								Name:  "AWS_EXECUTION_ENV",
 								Value: "eks-certificates-controller",
 							}},
-							Command: []string{
-								"go-runner",
-								"--also-stdout=true",
-								"--redirect-stderr=true",
-								"/eks-certificates-controller",
+							Command: []string{"/eks-certificates-controller"},
+							Args: []string{
 								"--enable-signer=true",
 								"--kubeconfig=/etc/kubernetes/kubeconfig/eks-certificates-controller.kubeconfig",
 								"--signing-cert-file=/etc/kubernetes/pki/ca/ca.crt",
@@ -77,7 +74,11 @@ func (c *Controller) reconcileCertsControllerDaemonSet(ctx context.Context, cont
 								"--role-arn=arn:aws:iam::" + accountID + ":role/CertificateControllerRole",
 								"--vpc-id=" + vpcID,
 								"--per-node-rate-limit-duration=10m",
-								"--threadiness=10",
+								"--ec2-api-qps=50",
+								"--ec2-api-burst=100",
+								"--kube-api-qps=100",
+								"--kube-api-burst=150",
+								"--threadiness=20",
 								"--logtostderr",
 							},
 							// SecurityContext: &v1.SecurityContext{AllowPrivilegeEscalation: ptr.Bool(true)},
