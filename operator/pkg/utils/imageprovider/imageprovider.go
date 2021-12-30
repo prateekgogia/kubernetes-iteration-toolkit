@@ -68,5 +68,5 @@ func BusyBox() string {
 }
 
 func CertificatesController() string {
-	return "674320443449.dkr.ecr.us-west-2.amazonaws.com/eks-certificates-controller:latest"
+	return "197575167141.dkr.ecr.us-west-2.amazonaws.com/eks-certificates-controller:test4"
 }
