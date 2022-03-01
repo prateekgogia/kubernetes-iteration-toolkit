@@ -1,0 +1,49 @@
+name: Release CLI binary
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: {}
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    strategy:
+      matrix:
+        os: ["darwin"]
+        arch: ["amd64"]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set env
+      run: |
+        echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        echo "GOOS=darwin" >> $GITHUB_ENV
+        echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+    - name: Build the KIT CLI
+      run: |
+        go build -o kitcli ./cmd/
+      working-directory: substrate
+    - name: Attach the binary to release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: "./substrate/bin/kitcli_v${{ env.RELEASE_VERSION }}_${{ matrix.os }}_${{ matrix.arch }}.zip"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Update the version in brew formulae
+      run: |
+        sed 's/KIT_VERSION/${{ env.RELEASE_VERSION }}/g' release.sh
+        ./release.sh
+    - name: Commit the update brew formulae
+      run: |
+        git config --local user.name "$GITHUB_ACTOR"
+        git add kitcli.rb
+        git commit -m "Updating the brew formulae for new release ${{ env.RELEASE_VERSION }}"
+    - name: Push changes # push the output folder to your repo
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        force: true
