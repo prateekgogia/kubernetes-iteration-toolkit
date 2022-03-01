@@ -23,6 +23,9 @@ jobs:
         echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
         echo "GOOS=darwin" >> $GITHUB_ENV
         echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.16.1'
     - name: Build the KIT CLI
       run: |
         go build -o kitcli ./cmd/
