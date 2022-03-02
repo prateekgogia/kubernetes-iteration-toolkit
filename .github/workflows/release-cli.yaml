@@ -35,13 +35,14 @@ jobs:
     - uses: actions/setup-go@v2
       with:
         go-version: '1.17.1'
-    - name: Build the KIT CLI, update the version in brew formulae
+    - name: Build the KIT CLI
       run: |
         go build -o ./bin/kitcli ./cmd/
+        zip ./bin/kitcli_${{ env.RELEASE_VERSION }}_${{ matrix.os }}_${{ matrix.arch }}.zip -j ./bin/kitcli
       working-directory: substrate
     - name: Attach the binary to release
       uses: softprops/action-gh-release@v1
       with:
-        files: "./substrate/bin/kitcli_v${{ env.RELEASE_VERSION }}_${{ matrix.os }}_${{ matrix.arch }}.zip"
+        files: "./substrate/bin/kitcli_${{ env.RELEASE_VERSION }}_${{ matrix.os }}_${{ matrix.arch }}.zip"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
