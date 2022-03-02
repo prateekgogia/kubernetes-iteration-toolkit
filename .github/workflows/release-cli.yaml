@@ -18,6 +18,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+          ~/go/bin/
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
     - name: Set env
       run: |
         echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
@@ -26,24 +35,10 @@ jobs:
     - uses: actions/setup-go@v2
       with:
         go-version: '1.17.1'
-    - name: Build the KIT CLI
+    - name: Build the KIT CLI, update the version in brew formulae
       run: |
         go build -o ./bin/kitcli ./cmd/
       working-directory: substrate
-    - name: Update the version in brew formulae
-      run: |
-        sed 's/KIT_VERSION/${{ env.RELEASE_VERSION }}/g' release.sh
-        ./release.sh
-    - name: Commit the update brew formulae
-      run: |
-        git config --local user.name "$GITHUB_ACTOR"
-        git add kitcli.rb
-        git commit -m "Updating the brew formulae for new release ${{ env.RELEASE_VERSION }}"
-    - name: Push changes # push the output folder to your repo
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        force: true
     - name: Attach the binary to release
       uses: softprops/action-gh-release@v1
       with:
