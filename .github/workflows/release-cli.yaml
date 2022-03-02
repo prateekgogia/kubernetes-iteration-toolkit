@@ -4,7 +4,7 @@ name: Release CLI binary
 # events but only for the master branch
 on:
   push:
-    branches-ignore: [main]
+    tags: ['v*']
   workflow_dispatch: {}
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -38,20 +38,7 @@ jobs:
     - name: Build the KIT CLI, update the version in brew formulae
       run: |
         go build -o ./bin/kitcli ./cmd/
-        sed 's/KIT_VERSION/${{ env.RELEASE_VERSION }}/g' ./release.sh
-        ./release.sh
       working-directory: substrate
-    - name: Commit the update brew formulae
-      run: |
-        git config --local user.name "$GITHUB_ACTOR"
-        git add kitcli.rb
-        git commit -m "Updating the brew formulae for new release ${{ env.RELEASE_VERSION }}"
-      working-directory: substrate
-    - name: Push changes # push the output folder to your repo
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        force: true
     - name: Attach the binary to release
       uses: softprops/action-gh-release@v1
       with:
