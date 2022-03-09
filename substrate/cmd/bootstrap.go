@@ -15,6 +15,7 @@ limitations under the License.
 package main
 
 import (
+	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -25,24 +26,36 @@ import (
 	"knative.dev/pkg/logging"
 )
 
-func init() {
-	rootCmd.AddCommand(&cobra.Command{
-		Use:   "apply",
-		Short: "Apply an environment for testing. Will reconnect if the environment already exists.",
+func bootstrapCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "bootstrap",
+		Short: "Bootstrap an environment for testing. Will reconnect if the environment already exists.",
 		Long:  ``,
-		Run:   Apply,
-	})
+		Run:   bootstrap,
+	}
 }
 
-func Apply(cmd *cobra.Command, args []string) {
+func bootstrap(cmd *cobra.Command, args []string) {
+	// ignore logs printed to stdout from underlying kubeadm packages
+	if !options.debug {
+		stdout := os.Stdout
+		stderr := os.Stderr
+		os.Stdout, _ = os.Open(os.DevNull)
+		os.Stderr, _ = os.Open(os.DevNull)
+		defer func() {
+			os.Stdout = stdout
+			os.Stderr = stderr
+		}()
+	}
 	ctx := cmd.Context()
 	start := time.Now()
+	// TODO make substrate name configurable
 	name := "test-substrate"
 	if err := substrate.NewController(ctx).Reconcile(ctx, &v1alpha1.Substrate{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1alpha1.SubstrateSpec{
 			VPC:          &v1alpha1.VPCSpec{CIDR: "10.0.0.0/16"},
-			InstanceType: aws.String("r6g.medium"),
+			InstanceType: aws.String("r6g.large"),
 			Subnets: []*v1alpha1.SubnetSpec{
 				{Zone: "us-west-2a", CIDR: "10.0.1.0/24"},
 				{Zone: "us-west-2b", CIDR: "10.0.2.0/24"},
@@ -56,5 +69,5 @@ func Apply(cmd *cobra.Command, args []string) {
 		logging.FromContext(ctx).Error(err.Error())
 		return
 	}
-	logging.FromContext(ctx).Infof("Applied substrate %s after %s", name, time.Since(start))
+	logging.FromContext(ctx).Infof("✅ Bootstrap finished, substrate name %s time taken %s", name, time.Since(start))
 }
