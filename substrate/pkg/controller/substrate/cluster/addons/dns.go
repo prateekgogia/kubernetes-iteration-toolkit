@@ -20,15 +20,15 @@ import (
 
 	"github.com/awslabs/kit/substrate/pkg/apis/v1alpha1"
 	"github.com/awslabs/kit/substrate/pkg/controller/substrate/cluster"
-	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/proxy"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/dns"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/kubeconfig"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-type KubeProxy struct {
+type DNS struct {
 }
 
-func (k *KubeProxy) Create(ctx context.Context, substrate *v1alpha1.Substrate) (reconcile.Result, error) {
+func (d *DNS) Create(ctx context.Context, substrate *v1alpha1.Substrate) (reconcile.Result, error) {
 	if !substrate.IsReady() {
 		return reconcile.Result{Requeue: true}, nil
 	}
@@ -36,13 +36,12 @@ func (k *KubeProxy) Create(ctx context.Context, substrate *v1alpha1.Substrate) (
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("creating client, %w", err)
 	}
-	config := cluster.DefaultClusterConfig(substrate)
-	if err := proxy.EnsureProxyAddon(&config.ClusterConfiguration, &config.LocalAPIEndpoint, client); err != nil {
-		return reconcile.Result{}, fmt.Errorf("ensuring kube-proxy addon, %w", err)
+	if err := dns.EnsureDNSAddon(&cluster.DefaultClusterConfig(substrate).ClusterConfiguration, client); err != nil {
+		return reconcile.Result{}, fmt.Errorf("ensuring DNS addon, %w", err)
 	}
 	return reconcile.Result{}, nil
 }
 
-func (k *KubeProxy) Delete(_ context.Context, _ *v1alpha1.Substrate) (reconcile.Result, error) {
+func (d *DNS) Delete(_ context.Context, _ *v1alpha1.Substrate) (reconcile.Result, error) {
 	return reconcile.Result{}, nil
 }

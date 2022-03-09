@@ -76,7 +76,7 @@ func (s *Subnets) ensure(ctx context.Context, substrate *v1alpha1.Substrate, sub
 			return nil, fmt.Errorf("associating route table with subnet, %w", err)
 		}
 	}
-	logging.FromContext(ctx).Infof("Ensured association of route table %s to subnet %s", aws.StringValue(routeTableID), aws.StringValue(subnet.SubnetId))
+	logging.FromContext(ctx).Debugf("Ensured association of route table %s to subnet %s", aws.StringValue(routeTableID), aws.StringValue(subnet.SubnetId))
 	if !subnetSpec.Public {
 		return subnet, nil
 	}
@@ -84,7 +84,7 @@ func (s *Subnets) ensure(ctx context.Context, substrate *v1alpha1.Substrate, sub
 		return nil, fmt.Errorf("modifying subnet attribute, %w", err)
 	}
 	subnet.MapPublicIpOnLaunch = aws.Bool(true)
-	logging.FromContext(ctx).Infof("Ensured subnet %s is public", aws.StringValue(subnet.SubnetId))
+	logging.FromContext(ctx).Debugf("Ensured subnet %s is public", aws.StringValue(subnet.SubnetId))
 	return subnet, nil
 }
 
@@ -95,14 +95,23 @@ func (s *Subnets) ensureSubnet(ctx context.Context, substrate *v1alpha1.Substrat
 		return nil, fmt.Errorf("describing subnets, %w", err)
 	}
 	if len(describeSubnetsOutput.Subnets) > 0 {
-		logging.FromContext(ctx).Infof("Found subnet %s", aws.StringValue(name))
+		logging.FromContext(ctx).Debugf("Found subnet %s", aws.StringValue(name))
 		return describeSubnetsOutput.Subnets[0], nil
+
+	}
+	// tag required by ELB controller to discover these subnets to configure ELB
+	tags := []*ec2.Tag{
+		{Key: aws.String("kubernetes.io/role/elb"), Value: aws.String("1")},
+	}
+	if subnetSpec.Public {
+		// these tags are required by Karpenter controller to discover these subnets to provision new node
+		tags = append(tags, &ec2.Tag{Key: aws.String("karpenter.sh/discovery"), Value: aws.String(substrate.Name)})
 	}
 	createSubnetsOutput, err := s.EC2.CreateSubnetWithContext(ctx, &ec2.CreateSubnetInput{
 		AvailabilityZone:  aws.String(subnetSpec.Zone),
 		CidrBlock:         aws.String(subnetSpec.CIDR),
 		VpcId:             substrate.Status.Infrastructure.VPCID,
-		TagSpecifications: discovery.Tags(substrate, ec2.ResourceTypeSubnet, name),
+		TagSpecifications: discovery.Tags(substrate, ec2.ResourceTypeSubnet, name, tags...),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating subnet, %w", err)
@@ -121,7 +130,7 @@ func (s *Subnets) Delete(ctx context.Context, substrate *v1alpha1.Substrate) (re
 			if _, err := s.EC2.DisassociateRouteTableWithContext(ctx, &ec2.DisassociateRouteTableInput{AssociationId: association.RouteTableAssociationId}); err != nil {
 				return reconcile.Result{}, fmt.Errorf("disassociating route table from subnet, %s", err)
 			}
-			logging.FromContext(ctx).Infof("Deleted association of route table %s to subnet %s", aws.StringValue(routeTable.RouteTableId), aws.StringValue(association.SubnetId))
+			logging.FromContext(ctx).Debugf("Deleted association of route table %s to subnet %s", aws.StringValue(routeTable.RouteTableId), aws.StringValue(association.SubnetId))
 		}
 	}
 	subnetsOutput, err := s.EC2.DescribeSubnetsWithContext(ctx, &ec2.DescribeSubnetsInput{Filters: discovery.Filters(substrate)})

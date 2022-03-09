@@ -63,7 +63,7 @@ func (i *InstanceProfile) create(ctx context.Context, resourceName, policy *stri
 		if err.(awserr.Error).Code() != iam.ErrCodeEntityAlreadyExistsException {
 			return reconcile.Result{}, fmt.Errorf("creating role, %w", err)
 		}
-		logging.FromContext(ctx).Infof("Found role %s", aws.StringValue(resourceName))
+		logging.FromContext(ctx).Debugf("Found role %s", aws.StringValue(resourceName))
 	} else {
 		logging.FromContext(ctx).Infof("Created role %s", aws.StringValue(resourceName))
 	}
@@ -79,14 +79,14 @@ func (i *InstanceProfile) create(ctx context.Context, resourceName, policy *stri
 		if _, err := i.IAM.AttachRolePolicyWithContext(ctx, &iam.AttachRolePolicyInput{RoleName: resourceName, PolicyArn: aws.String(policy)}); err != nil {
 			return reconcile.Result{}, fmt.Errorf("attaching role policy %w", err)
 		}
-		logging.FromContext(ctx).Infof("Ensured managed policy %s for %s", policy, aws.StringValue(resourceName))
+		logging.FromContext(ctx).Debugf("Ensured managed policy %s for %s", policy, aws.StringValue(resourceName))
 	}
 	// Profile
 	if _, err := i.IAM.CreateInstanceProfileWithContext(ctx, &iam.CreateInstanceProfileInput{InstanceProfileName: resourceName}); err != nil {
 		if err.(awserr.Error).Code() != iam.ErrCodeEntityAlreadyExistsException {
 			return reconcile.Result{}, fmt.Errorf("creating instance profile, %w", err)
 		}
-		logging.FromContext(ctx).Infof("Found instance profile %s", aws.StringValue(resourceName))
+		logging.FromContext(ctx).Debugf("Found instance profile %s", aws.StringValue(resourceName))
 	} else {
 		logging.FromContext(ctx).Infof("Created instance profile %s", aws.StringValue(resourceName))
 	}
@@ -95,7 +95,7 @@ func (i *InstanceProfile) create(ctx context.Context, resourceName, policy *stri
 		if err.(awserr.Error).Code() != iam.ErrCodeLimitExceededException {
 			return reconcile.Result{}, fmt.Errorf("adding role to instance profile, %w", err)
 		}
-		logging.FromContext(ctx).Infof("Found role %s on instance profile %s", aws.StringValue(resourceName), aws.StringValue(resourceName))
+		logging.FromContext(ctx).Debugf("Found role %s on instance profile %s", aws.StringValue(resourceName), aws.StringValue(resourceName))
 	} else {
 		logging.FromContext(ctx).Infof("Added role %s to instance profile %s", aws.StringValue(resourceName), aws.StringValue(resourceName))
 	}
@@ -177,7 +177,6 @@ func desiredRolesFor(substrate *v1alpha1.Substrate) []role {
 						"ec2:CreateFleet",
 						"ec2:RunInstances",
 						"ec2:CreateTags",
-						"iam:PassRole",
 						"ec2:TerminateInstances",
 						"ec2:DescribeLaunchTemplates",
 						"ec2:DescribeInstances",
@@ -186,6 +185,91 @@ func desiredRolesFor(substrate *v1alpha1.Substrate) []role {
 						"ec2:DescribeInstanceTypes",
 						"ec2:DescribeInstanceTypeOfferings",
 						"ec2:DescribeAvailabilityZones",
+						"ec2:DescribeAccountAttributes",
+						"ec2:DescribeInternetGateways",
+						"ec2:DescribeVpcs",
+						"ec2:DescribeNetworkInterfaces",
+						"ec2:DescribeTags",
+						"ec2:GetCoipPoolUsage",
+						"ec2:DescribeCoipPools",
+						"ec2:CreateLaunchTemplateVersion",
+						"ec2:DeleteLaunchTemplate",
+						"ec2:DescribeLaunchTemplateVersions",
+						"ec2:AuthorizeSecurityGroupIngress",
+						"ec2:RevokeSecurityGroupIngress",
+						"ec2:CreateSnapshot",
+						"ec2:AttachVolume",
+						"ec2:DetachVolume",
+						"ec2:ModifyVolume",
+						"ec2:DescribeVolumes",
+						"ec2:DescribeVolumesModifications",
+						"ec2:DeleteTags",
+						"ec2:CreateVolume",
+						"ec2:DeleteVolume",
+						"ec2:DeleteSnapshot",
+						"elasticloadbalancing:DescribeLoadBalancers",
+						"elasticloadbalancing:DescribeLoadBalancerAttributes",
+						"elasticloadbalancing:DescribeListeners",
+						"elasticloadbalancing:DescribeListenerCertificates",
+						"elasticloadbalancing:DescribeSSLPolicies",
+						"elasticloadbalancing:DescribeRules",
+						"elasticloadbalancing:DescribeTargetGroups",
+						"elasticloadbalancing:DescribeTargetGroupAttributes",
+						"elasticloadbalancing:DescribeTargetHealth",
+						"elasticloadbalancing:DescribeTags",
+						"elasticloadbalancing:CreateLoadBalancer",
+						"elasticloadbalancing:CreateTargetGroup",
+						"elasticloadbalancing:CreateListener",
+						"elasticloadbalancing:DeleteListener",
+						"elasticloadbalancing:CreateRule",
+						"elasticloadbalancing:DeleteRule",
+						"elasticloadbalancing:AddTags",
+						"elasticloadbalancing:RemoveTags",
+						"elasticloadbalancing:ModifyLoadBalancerAttributes",
+						"elasticloadbalancing:SetIpAddressType",
+						"elasticloadbalancing:SetSecurityGroups",
+						"elasticloadbalancing:SetSubnets",
+						"elasticloadbalancing:DeleteLoadBalancer",
+						"elasticloadbalancing:ModifyTargetGroup",
+						"elasticloadbalancing:ModifyTargetGroupAttributes",
+						"elasticloadbalancing:DeleteTargetGroup",
+						"elasticloadbalancing:RegisterTargets",
+						"elasticloadbalancing:DeregisterTargets",
+						"elasticloadbalancing:SetWebAcl",
+						"elasticloadbalancing:ModifyListener",
+						"elasticloadbalancing:AddListenerCertificates",
+						"elasticloadbalancing:RemoveListenerCertificates",
+						"elasticloadbalancing:ModifyRule",
+						"iam:CreateRole",
+						"iam:PassRole",
+						"iam:AddRoleToInstanceProfile",
+						"iam:CreateInstanceProfile",
+						"iam:AttachRolePolicy",
+						"iam:RemoveRoleFromInstanceProfile",
+						"iam:DeleteInstanceProfile",
+						"iam:DetachRolePolicy",
+						"iam:DeleteRole",
+						"iam:TagRole",
+						"iam:GetRole",
+						"iam:GetInstanceProfile",
+						"iam:CreateServiceLinkedRole",
+						"iam:ListServerCertificates",
+						"iam:GetServerCertificate",
+						"shield:GetSubscriptionState",
+						"shield:DescribeProtection",
+						"shield:CreateProtection",
+						"shield:DeleteProtection",
+						"waf-regional:GetWebACL",
+						"waf-regional:GetWebACLForResource",
+						"waf-regional:AssociateWebACL",
+						"waf-regional:DisassociateWebACL",
+						"wafv2:GetWebACL",
+						"wafv2:GetWebACLForResource",
+						"wafv2:AssociateWebACL",
+						"wafv2:DisassociateWebACL",
+						"cognito-idp:DescribeUserPoolClient",
+						"acm:ListCertificates",
+						"acm:DescribeCertificate",
 						"ssm:GetParameter"
 					],
 					"Resource": ["*"]
@@ -199,7 +283,7 @@ func desiredRolesFor(substrate *v1alpha1.Substrate) []role {
 		},
 	}, {
 		// Roles and policies attached to the nodes provisioned by Karpenter
-		name: discovery.Name(substrate, tenantControlPlaneNodeRole),
+		name: discovery.Name(substrate, TenantControlPlaneNodeRole),
 		managedPolicies: []string{
 			"arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
 			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
