@@ -87,7 +87,7 @@ jobs:
       with:
         formula-name: kitctl
         formula-path: kitctl.rb
-        homebrew-tap: awslabs/kubernetes-iteration-toolkit
+        homebrew-tap: prateekgogia/kubernetes-iteration-toolkit
         base-branch: main
         download-url: https://github.com/awslabs/kubernetes-iteration-toolkit/releases/download/${{ env.RELEASE_VERSION }}/kitctl_${{ env.RELEASE_VERSION }}_${{ matrix.os }}_${{ matrix.arch }}.zip
         commit-message: |
