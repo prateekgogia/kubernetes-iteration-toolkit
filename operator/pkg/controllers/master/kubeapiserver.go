@@ -71,7 +71,8 @@ func APIServerDeploymentName(clusterName string) string {
 
 func APIServerLabels(clustername string) map[string]string {
 	return map[string]string{
-		object.AppNameLabelKey: "apiserver",
+		object.AppNameLabelKey:      "apiserver",
+		object.ControlPlaneLabelKey: clustername,
 	}
 }
 
@@ -123,7 +124,7 @@ func apiServerPodSpecFor(controlPlane *v1alpha1.ControlPlane) v1.PodSpec {
 					"--etcd-servers=https://" + etcd.SvcFQDN(controlPlane.ClusterName(), controlPlane.Namespace) + ":2379",
 					"--kubelet-client-certificate=/etc/kubernetes/pki/kubelet/apiserver-kubelet-client.crt",
 					"--kubelet-client-key=/etc/kubernetes/pki/kubelet/apiserver-kubelet-client.key",
-					"--kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname",
+					"--kubelet-preferred-address-types=InternalIP,InternalDNS",
 					"--proxy-client-cert-file=/etc/kubernetes/pki/proxy/front-proxy-client.crt",
 					"--proxy-client-key-file=/etc/kubernetes/pki/proxy/front-proxy-client.key",
 					"--requestheader-allowed-names=front-proxy-client",
@@ -140,6 +141,16 @@ func apiServerPodSpecFor(controlPlane *v1alpha1.ControlPlane) v1.PodSpec {
 					"--tls-private-key-file=/etc/kubernetes/pki/apiserver/apiserver.key",
 					"--authentication-token-webhook-config-file=/var/aws-iam-authenticator/kubeconfig/kubeconfig.yaml",
 					"--encryption-provider-config=/etc/kubernetes/aws-encryption-provider/encryption-configuration.yaml",
+					"--profiling=false",
+					"--shutdown-delay-duration=5s",
+					"--authentication-token-webhook-cache-ttl=7m",
+					"--enable-aggregator-routing=true",
+					"--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+					"--service-account-max-token-expiration=24h",
+					"--kubelet-certificate-authority=/etc/kubernetes/pki/ca/ca.crt",
+					"--feature-gates=TTLAfterFinished=true",
+					"--logtostderr=true",
+					"--v=2",
 				},
 				Env: []v1.EnvVar{{
 					Name: "NODE_IP",

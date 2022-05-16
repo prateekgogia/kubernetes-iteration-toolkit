@@ -20,9 +20,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/awslabs/kubernetes-iteration-toolkit/operator/pkg/apis/controlplane/v1alpha1"
-	"github.com/awslabs/kubernetes-iteration-toolkit/operator/pkg/utils/functional"
 	"github.com/awslabs/kubernetes-iteration-toolkit/operator/pkg/utils/imageprovider"
-	"github.com/awslabs/kubernetes-iteration-toolkit/operator/pkg/utils/object"
 	"github.com/awslabs/kubernetes-iteration-toolkit/operator/pkg/utils/secrets"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -35,20 +33,20 @@ func podSpecFor(controlPlane *v1alpha1.ControlPlane) *v1.PodSpec {
 		TerminationGracePeriodSeconds: aws.Int64(1),
 		HostNetwork:                   true,
 		DNSPolicy:                     v1.DNSClusterFirstWithHostNet,
-		NodeSelector:                  nodeSelector(controlPlane.ClusterName()),
+		NodeSelector:                  labels(controlPlane.ClusterName()),
 		TopologySpreadConstraints: []v1.TopologySpreadConstraint{{
 			MaxSkew:           int32(1),
 			TopologyKey:       "topology.kubernetes.io/zone",
 			WhenUnsatisfiable: v1.DoNotSchedule,
 			LabelSelector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: labels(controlPlane.ClusterName()),
 			},
 		}, {
 			MaxSkew:           int32(1),
 			TopologyKey:       "kubernetes.io/hostname",
 			WhenUnsatisfiable: v1.DoNotSchedule,
 			LabelSelector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: labels(controlPlane.ClusterName()),
 			},
 		}},
 		Containers: []v1.Container{{
@@ -76,13 +74,17 @@ func podSpecFor(controlPlane *v1alpha1.ControlPlane) *v1.PodSpec {
 			}, {
 				Name:      "etcd-server-certs",
 				MountPath: "/etc/kubernetes/pki/etcd/server",
+			}, {
+				Name:      "etcd-bootstrap",
+				MountPath: "/etc/kubernetes/",
 			}},
-			Command: []string{"etcd"},
+			Command: []string{
+				"./etc/kubernetes/bootstrap.sh",
+			},
 			Args: []string{
 				"--cert-file=/etc/kubernetes/pki/etcd/server/server.crt",
 				"--initial-cluster=" + initialClusterFlag(controlPlane),
 				"--data-dir=/var/lib/etcd",
-				"--initial-cluster-state=new",
 				"--initial-cluster-token=etcd-cluster-1",
 				"--key-file=/etc/kubernetes/pki/etcd/server/server.key",
 				"--advertise-client-urls=" + advertizeClusterURL(controlPlane),
@@ -99,6 +101,9 @@ func podSpecFor(controlPlane *v1alpha1.ControlPlane) *v1.PodSpec {
 				"--trusted-ca-file=/etc/kubernetes/pki/ca.crt",
 				"--logger=zap",
 				"--quota-backend-bytes=8589934592",
+				"--max-request-bytes=1572864",
+				"--grpc-keepalive-interval=2h0m0s",
+				"--pre-vote=true",
 			},
 			Env: []v1.EnvVar{{
 				Name: "NODE_IP",
@@ -178,6 +183,14 @@ func podSpecFor(controlPlane *v1alpha1.ControlPlane) *v1.PodSpec {
 					}},
 				},
 			},
+		}, {
+			Name: "etcd-bootstrap",
+			VolumeSource: v1.VolumeSource{
+				ConfigMap: &v1.ConfigMapVolumeSource{
+					DefaultMode:          aws.Int32(0777),
+					LocalObjectReference: v1.LocalObjectReference{Name: bootstrapConfigMapName(controlPlane.ClusterName())},
+				},
+			},
 		}},
 	}
 }
@@ -211,9 +224,4 @@ func caServerName(controlPlane *v1alpha1.ControlPlane) string {
 }
 func caPeerName(controlPlane *v1alpha1.ControlPlane) string {
 	return fmt.Sprintf("%s-etcd-peer", controlPlane.ClusterName())
-}
-
-func nodeSelector(clusterName string) map[string]string {
-	return functional.UnionStringMaps(labels,
-		map[string]string{object.ControlPlaneLabelKey: clusterName})
 }

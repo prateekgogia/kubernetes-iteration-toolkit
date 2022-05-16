@@ -61,9 +61,10 @@ func SchedulerName(clusterName string) string {
 	return fmt.Sprintf("%s-scheduler", clusterName)
 }
 
-func schedulerLabels(clustername string) map[string]string {
+func schedulerLabels(clusterName string) map[string]string {
 	return map[string]string{
-		object.AppNameLabelKey: SchedulerName(clustername),
+		object.AppNameLabelKey:      "kube-scheduler",
+		object.ControlPlaneLabelKey: clusterName,
 	}
 }
 
@@ -85,12 +86,18 @@ func schedulerPodSpecFor(controlPlane *v1alpha1.ControlPlane) v1.PodSpec {
 					v1.ResourceCPU: resource.MustParse("1"),
 				},
 			},
+			Ports: []v1.ContainerPort{{
+				ContainerPort: 10251,
+				Name:          "metrics",
+			}},
 			Args: []string{
 				"--authentication-kubeconfig=/etc/kubernetes/config/scheduler/scheduler.conf",
 				"--authorization-kubeconfig=/etc/kubernetes/config/scheduler/scheduler.conf",
 				"--bind-address=127.0.0.1",
 				"--kubeconfig=/etc/kubernetes/config/scheduler/scheduler.conf",
 				"--leader-elect=true",
+				"--logtostderr=true",
+				"--v=2",
 			},
 			VolumeMounts: []v1.VolumeMount{{
 				Name:      "ca-certs",

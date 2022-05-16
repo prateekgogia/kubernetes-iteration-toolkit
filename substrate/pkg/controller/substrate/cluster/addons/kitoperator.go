@@ -33,9 +33,12 @@ func (l *KITOperator) Create(ctx context.Context, substrate *v1alpha1.Substrate)
 	if err := helm.NewClient(*substrate.Status.Cluster.KubeConfig).Apply(ctx, &helm.Chart{
 		Namespace:       "kit",
 		Name:            "kit-operator",
-		Repository:      "https://github.com/awslabs/kubernetes-iteration-toolkit/releases/download/kit-operator-0.0.11",
-		Version:         "0.0.11",
+		Repository:      "https://awslabs.github.io/kubernetes-iteration-toolkit",
 		CreateNamespace: true,
+		Values: map[string]interface{}{
+			"controller": map[string]interface{}{"nodeSelector": map[string]interface{}{"kit.aws/substrate": "control-plane"}},
+			"webhook":    map[string]interface{}{"nodeSelector": map[string]interface{}{"kit.aws/substrate": "control-plane"}},
+		},
 	}); err != nil {
 		return reconcile.Result{}, fmt.Errorf("applying chart, %w", err)
 	}

@@ -20,7 +20,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/awslabs/kubernetes-iteration-toolkit/operator/pkg/apis/controlplane/v1alpha1"
-	"github.com/awslabs/kubernetes-iteration-toolkit/operator/pkg/utils/functional"
 	"github.com/awslabs/kubernetes-iteration-toolkit/operator/pkg/utils/imageprovider"
 	"github.com/awslabs/kubernetes-iteration-toolkit/operator/pkg/utils/object"
 	"github.com/awslabs/kubernetes-iteration-toolkit/operator/pkg/utils/patch"
@@ -75,7 +74,10 @@ func controllerManagerName(clusterName string) string {
 }
 
 func kcmLabels(clustername string) map[string]string {
-	return functional.UnionStringMaps(labelsFor(clustername), map[string]string{"component": "kube-controller-manager"})
+	return map[string]string{
+		object.AppNameLabelKey:      "kube-controller-manager",
+		object.ControlPlaneLabelKey: clustername,
+	}
 }
 
 func kcmPodSpecFor(controlPlane *v1alpha1.ControlPlane) v1.PodSpec {
@@ -96,6 +98,10 @@ func kcmPodSpecFor(controlPlane *v1alpha1.ControlPlane) v1.PodSpec {
 					v1.ResourceCPU: resource.MustParse("1"),
 				},
 			},
+			Ports: []v1.ContainerPort{{
+				ContainerPort: 10252,
+				Name:          "metrics",
+			}},
 			Args: []string{
 				"--authentication-kubeconfig=/etc/kubernetes/config/kcm/controller-manager.conf",
 				"--authorization-kubeconfig=/etc/kubernetes/config/kcm/controller-manager.conf",
@@ -103,7 +109,7 @@ func kcmPodSpecFor(controlPlane *v1alpha1.ControlPlane) v1.PodSpec {
 				"--client-ca-file=/etc/kubernetes/pki/ca/ca.crt",
 				"--cluster-signing-cert-file=/etc/kubernetes/pki/ca/ca.crt",
 				"--cluster-signing-key-file=/etc/kubernetes/pki/ca/ca.key",
-				"--controllers=*,-csrsigning",
+				"--controllers=*", // TODO add -csrsigning once this is closed - https://github.com/awslabs/kubernetes-iteration-toolkit/issues/105
 				"--kubeconfig=/etc/kubernetes/config/kcm/controller-manager.conf",
 				"--leader-elect=true",
 				"--requestheader-client-ca-file=/etc/kubernetes/pki/proxy-ca/front-proxy-ca.crt",
@@ -112,6 +118,10 @@ func kcmPodSpecFor(controlPlane *v1alpha1.ControlPlane) v1.PodSpec {
 				"--use-service-account-credentials=true",
 				"--cloud-provider=aws",
 				"--cloud-config=/etc/kubernetes/cloud-config/aws.config",
+				"--horizontal-pod-autoscaler-use-rest-clients=true",
+				"--feature-gates=RotateKubeletServerCertificate=true",
+				"--logtostderr=true",
+				"--v=2",
 			},
 			VolumeMounts: []v1.VolumeMount{{
 				Name:      "ca-certs",
