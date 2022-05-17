@@ -59,6 +59,14 @@ jobs:
       issues: write
       pull-requests: write
       contents: write
+      actions: write
+      deployments: write
+      discussions: write
+      issues: write
+      metadata: read
+      packages: write
+      pages: write
+      statuses: write
     steps:
     - uses: actions/checkout@v2
     - uses: actions/cache@v2
