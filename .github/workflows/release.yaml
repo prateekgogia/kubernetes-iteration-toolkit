@@ -55,6 +55,7 @@ jobs:
         arch: ["amd64"]
     runs-on: ubuntu-latest
     permissions:
+      checks: write
       issues: write
       pull-requests: write
       contents: write
