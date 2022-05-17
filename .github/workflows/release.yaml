@@ -62,7 +62,6 @@ jobs:
       actions: write
       deployments: write
       discussions: write
-      metadata: read
       packages: write
       pages: write
       statuses: write
