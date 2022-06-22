@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: awscli-eks-fargate
+  name: fargate-nodes-on-eks-using-awscli
   namespace: tekton-pipelines
 spec:
   workspaces:

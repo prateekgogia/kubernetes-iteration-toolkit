@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: awscli-eks-cl2loadtest
+  name: cl2-loadtest-on-eks-using-awscli
   namespace: tekton-pipelines
 spec:
   params:

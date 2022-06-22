@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: kitloadtest
+  name: cl2-loadtest-on-kit-guest-cluster
 spec:
   workspaces:
     - name: config
