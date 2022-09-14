@@ -7,7 +7,7 @@ require (
 	github.com/awslabs/kubernetes-iteration-toolkit/operator v0.0.0-20220818192233-b51328aa42d4
 	github.com/imdario/mergo v0.3.12
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/spf13/cobra v1.4.0
+	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	go.uber.org/multierr v1.7.0
 	go.uber.org/zap v1.21.0
