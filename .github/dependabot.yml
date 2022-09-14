@@ -2,13 +2,14 @@
 version: 2
 updates:
   - package-ecosystem: "gomod"
-    directory: "/"
+    directory: "/substrate"
     schedule:
       interval: "monthly"
     ignore:
       - dependency-name: "k8s.io/api"
       - dependency-name: "k8s.io/apimachinery"
       - dependency-name: "k8s.io/client-go"
+      - dependency-name: "k8s.io/kube-proxy"
       - dependency-name: "sigs.k8s.io/controller-runtime"
       - dependency-name: "github.com/containerd/containerd"
       - dependency-name: "github.com/google/ko"
