@@ -7,7 +7,7 @@ require (
 	github.com/awslabs/kubernetes-iteration-toolkit/operator v0.0.0-20220818192233-b51328aa42d4
 	github.com/imdario/mergo v0.3.13
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/spf13/cobra v1.5.0
+	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	go.uber.org/multierr v1.7.0
 	go.uber.org/zap v1.21.0
@@ -73,7 +73,7 @@ require (
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
